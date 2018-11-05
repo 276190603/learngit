@@ -1,0 +1,109 @@
+C51 COMPILER V9.54   BMS                                                                   02/24/2017 15:09:11 PAGE 1   
+
+
+C51 COMPILER V9.54, COMPILATION OF MODULE BMS
+OBJECT MODULE PLACED IN BMS.OBJ
+COMPILER INVOKED BY: E:\Development\Keil\C51\BIN\C51.EXE BMS.c OPTIMIZE(8,SPEED) BROWSE INCDIR(C:\Keil_MDK4.7.4\C51\INC\
+                    -SiLABS;C:\Keil_C51_V5\C51\INC\SiLABS;C:\KeilMDK\C51\INC\SiLABS) DEBUG OBJECTEXTEND TABS(2)
+
+line level    source
+
+   1          #include <rtx51tny.h>                 /* RTX-51 tiny functions & defines      */
+   2          #include "c8051F000.h"
+   3          #include "math.h"
+   4          #include "MYIIC.h"
+   5          #include "libc8051fxxx.h"
+   6          
+   7          #define SYSCLK       22118400          // External crystal oscillator frequency
+   8          #define SAMPLE_RATE  51200             // Sample frequency in Hz
+   9          
+  10          sbit CR_start = P0^6;
+  11          
+  12          sbit green = P0^2;
+  13          sbit fd_pwm = P0^2;
+  14          sbit fd_start = P0^3;
+  15          extern unsigned int counter0;
+  16                    
+  17          extern unsigned char local_ID;
+  18          /******************************************************************************/
+  19          /*       Task 0 'job0':  RTX-51 tiny starts execution with task 0             */
+  20          /******************************************************************************/
+  21          job0 () _task_ 0  {
+  22   1        Init_Device();
+  23   1        UART0_Init ();
+  24   1        Timer3_Init (SYSCLK/SAMPLE_RATE);   // Initialize Timer3 to overflow at
+  25   1      
+  26   1        ADC0_Init ();                       // Init ADC
+  27   1        ADCEN = 1;                          // enable ADC
+  28   1        PRT0CF = 0xff;                     // Set TX pin to push-pull
+  29   1        DAC0H = 0xff;
+  30   1        DAC0L = 0xf0;
+  31   1        CR_start = 1;
+  32   1        DAC1H = 0x00;
+  33   1        DAC1L = 0x00;                    
+  34   1        local_ID=read_add(0x30);
+  35   1        green = 0;
+  36   1        os_create_task (1);                 /* start task 1                         */
+  37   1        os_create_task (2);                 /* start task 2                         */
+  38   1        WDTCN = 0xA5;
+  39   1        while (1)  {                        /* endless loop                         */
+  40   2          reply();
+  41   2      //    ADC_READ_R();
+  42   2          os_send_signal (1);
+  43   2        }
+  44   1      }
+  45          
+  46          /******************************************************************************/
+  47          /*   Task 1 'job1':  RTX-51 tiny starts this task with os_create_task (1)     */
+  48          /******************************************************************************/
+  49          job1 () _task_ 1  {
+  50   1        while (1)  {                        /* endless loop                         */     
+  51   2          os_wait (K_SIG, 0, 0);            /* wait for signal                      */
+  52   2          counter0++;
+  53   2          if (counter0<340)
+  54   2            { 
+C51 COMPILER V9.54   BMS                                                                   02/24/2017 15:09:11 PAGE 2   
+
+  55   3              green =1;
+  56   3            }
+  57   2            else if (counter0<360)
+  58   2            { 
+  59   3              green =0;
+  60   3            }
+  61   2            else if (counter0<380)
+  62   2            { 
+  63   3              green =1;
+  64   3            }
+  65   2            else if(counter0<400)
+  66   2            { 
+  67   3              green =0;
+  68   3            }
+  69   2            else
+  70   2              counter0=0;
+  71   2        }
+  72   1      }
+  73          
+  74          /******************************************************************************/
+  75          /*    Task 2 'job2':  RTX-51 tiny starts this task with os_create_task (2)    */
+  76          /******************************************************************************/
+  77          job2 () _task_ 2  {
+  78   1        while (1)  {                        /* endless loop                         */   
+  79   2            WDTCN = 0xA5; 
+  80   2          os_wait (K_TMO, 10, 0);
+  81   2        }
+  82   1      }
+  83          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    163    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

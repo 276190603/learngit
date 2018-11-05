@@ -1,0 +1,5 @@
+"Conf_tny.obj",
+"BMS.obj",
+".\libc8051fxxx.LIB" 
+TO "BMS_2V_75m-V1.0" Rtx51Tiny 
+RAMSIZE(256) 
